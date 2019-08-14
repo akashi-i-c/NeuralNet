@@ -3,6 +3,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 #include<math.h>
 
 double *In;
@@ -20,10 +21,10 @@ double *dB;
 int n;
 int flug = 0;
 
-double inner_product1(int a,long patern){
+double inner_product1(int a,long pattern){
     double Y = 0;
     for(int i=0 ; i < n ; i++){
-        Y += W[n * a + i] * In[patern * n + i];
+        Y += W[n * a + i] * In[pattern * n + i];
     }
     Y += B[a];
     return Y;
@@ -32,7 +33,7 @@ double inner_product1(int a,long patern){
 double inner_product2(){
     double Y = 0;
     for(int i=0 ; i < n ; i++){
-        Y += W[n * (n - 1) + i] * S[i];
+        Y += W[n * n + i] * S[i];
     }
     Y += B[n];
     return Y;
@@ -40,7 +41,11 @@ double inner_product2(){
 
 double step(double a){
     double Y;
-    Y = (a / fabs(a) + 1) / 2;
+    if(a == 0.0){
+        Y = 0;
+    }else{
+        Y = (a / fabs(a) + 1) / 2;
+    }
     return Y;
 }
 
@@ -76,7 +81,9 @@ void* pre_matrix(int size){
         free(dB);
         exit(1);
     }
-    else{}
+    else{
+        memset(tmp,0,sizeof(double) * size);
+    }
     printf("address : %p  ",tmp);
     return tmp;
 }
@@ -117,13 +124,13 @@ void print01(int bit,long a){
 int main(){
     printf("How many input ? -> ");
     scanf("%d",&n);
-    long patern = pow(2,n);
+    long pattern = pow(2,n);
     long pc = 0;
-    printf("patern : %d\n",patern);
+    printf("pattern : %d\n",pattern);
 
-    In = (double *)pre_matrix(patern * n);
+    In = (double *)pre_matrix(pattern * n);
     printf("In : ok\n");
-    T = (double *)pre_matrix(patern);
+    T = (double *)pre_matrix(pattern);
     printf("T  : ok\n");
     W = (double *)pre_matrix((n+1) * n);
     printf("W  : ok\n");
@@ -131,17 +138,19 @@ int main(){
     printf("B  : ok\n");
     S = (double *)pre_matrix(n);
     printf("S  : ok\n");
-    test = (double *)pre_matrix(patern);
+    test = (double *)pre_matrix(pattern);
     printf("test : ok\n");
-    dY = (double *)pre_matrix(patern);
+    dY = (double *)pre_matrix(pattern);
     printf("dY : ok\n");
+    test = (double *)pre_matrix(pattern);
+    printf("test : ok\n");
     dW = (double *)pre_matrix((n+1) * n);
     printf("dW : ok\n");
     dB = (double *)pre_matrix(n+1);
     printf("dB : ok\n");
     //入力パターンセッティング
-    for(long i=0 ; i < patern ; i++){
-        printf("        patern[%3d]\n",i);
+    for(long i=0 ; i < pattern ; i++){
+        printf("        pattern[%3d]\n",i);
         for(int j=0 ; j < n ; j++){
             In[i * n + j] = (0b1 & (i >> j));
             printf("In[%3d] : %lf\n",j,In[i * n + j]);
@@ -149,22 +158,21 @@ int main(){
     }
     
     printf("input teatch data\n");
-    for(long i=0 ; i < patern ; i++){
+    for(long i=0 ; i < pattern ; i++){
         print01(n,i);
         printf(" -> ");
         scanf("%lf",T + i);
-        //printf("%lf\n",T[i]);
     }
 
-/*    
+ 
     printf("input learn rate : ");
     scanf("%lf",&lr);
     long count;
     printf("input repeat count : ");
     scanf("%d",&count);
     for(long aj=0 ; aj <= count ; aj++){
-        *///入力・算出
-        for(int i=0 ; i < patern ; i++){
+        //入力・算出
+        for(int i=0 ; i < pattern ; i++){
             double Y;
             Y = exe(i);
             printf("Y : %8lf\n",Y);
@@ -173,71 +181,57 @@ int main(){
             else{
                 printf("! ajust[%d] !   E : %8lf\n",i,Y - T[i]);
             
-            /*//中間層
-                //sigmoid-step
-                dW[0][0] = (Y - T[i]) * W[2][0] * S[2][0] * (1 - S[2][0]) * S[0][0] * lr;
-                dW[0][1] = (Y - T[i]) * W[2][0] * S[2][0] * (1 - S[2][0]) * S[0][1] * lr;
-                dB[0] = (Y - T[i]) * W[2][0] * S[2][0] * (1 - S[2][0]) * lr;
-                W[0][0] -= dW[0][0];
-                W[0][1] -= dW[0][1];
-                B[0] -= dB[0];
+                //中間層
+                for(int j=0 ; j < n ; j++){
+                    for(int k=0 ; k < n ; k++){
+                        dW[j * n + k] = (Y - T[i]) * W[n * n + j] * S[j] * (1 - S[j]) * In[i * n + k] * lr;
+                        W[j * n + k] -= dW[j * n + k];
 
-                dW[1][0] = (Y - T[i]) * W[2][1] * S[2][1] * (1 - S[2][1]) * S[1][0] * lr;
-                dW[1][1] = (Y - T[i]) * W[2][1] * S[2][1] * (1 - S[2][1]) * S[1][1] * lr;
-                dB[1] = (Y - T[i]) * W[2][1] * S[2][1] * (1 - S[2][1]) * lr;    
-                W[1][0] -= dW[1][0];
-                W[1][1] -= dW[1][1];
-                B[1] -= dB[1];
-                
-                printf("w11 : %8lf(%8lf)  |  w12 : %8lf(%8lf)  |  w1b : %8lf(%8lf)\n",
-                        W[0][0],(-1 * dW[0][0]),
-                        W[0][1],(-1 * dW[0][1]),
-                        B[0],(-1 * dB[0]));
-                printf("w21 : %8lf(%8lf)  |  w22 : %8lf(%8lf)  |  w2b : %8lf(%8lf)\n",
-                        W[1][0],(-1 * dW[1][0]),
-                        W[1][1],(-1 * dW[1][1]),
-                        B[1],(-1 * dB[1]));
+                    }
+                    dB[j] = (Y - T[i]) * W[n * n + j] * S[j] * (1 - S[j]) * lr;
+                    B[j] -= dB[j];
+                    
+                    printf("%d bias : %8lf(%8lf)\n",j,B[j],(-1 * dB[j]));
+                }
 
                 //出力層
                 //step
-                dW[2][0] = (Y - T[i]) * S[2][0] * lr;
-                dW[2][1] = (Y - T[i]) * S[2][1] * lr;
-                dB[2] = (Y - T[i]) * lr; 
-                W[2][0] -= dW[2][0];
-                W[2][1] -= dW[2][1];
-                B[2] -= dB[2];
+                for(int k=0 ; k < n ; k++){
+                    dW[n * n + k] = (Y - T[i]) * S[k] * lr;
+                    W[n * n + k] -= dW[n * n + k];
+                }
+                dB[n] = (Y - T[i]) * lr; 
+                B[n] -= dB[n];
                 
-                printf("w31 : %8lf(%8lf)  |  w32 : %8lf(%8lf)  |  w3b : %8lf(%8lf)\n",
-                        W[2][0],(-1 * dW[2][0]),
-                        W[2][1],(-1 * dW[2][1]),
-                        B[2],(-1 * dB[2]));   
-            */
+                printf("output bias : %8lf(%8lf)\n",B[n],(-1 * dB[n]));   
             }
         }
-/*
-        dY[0] = exe(0) - test[0];
-        dY[1] = exe(1) - test[1];
-        dY[2] = exe(2) - test[2];
-        dY[3] = exe(3) - test[3];
 
         //テスト
-        test[0] = exe(0);
-        test[1] = exe(1);
-        test[2] = exe(2);
-        test[3] = exe(3);
+        for(long i=0 ; i < pattern ; i++){
+            dY[i] = exe(i) - test[i];
+            test[i] = exe(i);
+        }
 
-        for(int j=0 ; j < patern ; j++){
+        for(int j=0 ; j < pattern ; j++){
             if(test[j] == T[j]);
             else{
                 flug = 1;
             }
         }
-        printf("     %7d times     |  (0,0) -> %8lf(%8lf) (1,0) -> %8lf(%8lf)  (0,1) -> %8lf(%8lf)  (1,1) -> %8lf(%8lf)\n",aj,test[0],dY[0],test[1],dY[1],test[2],dY[2],test[3],dY[3]);
+
+        printf("     %7d times     |  ",aj);
+        for(long i=0 ; i < pattern ; i++){
+            print01(n,i);
+            printf(" -> ");
+            printf("%lf(%lf)  |  ",test[i],dY[i]);
+        }
+        printf("\n");
         if(flug == 0) break;
         else{}
         flug = 0;
     }
-*/
+
     printf("finish\n");
     free(In);
     free(T);
