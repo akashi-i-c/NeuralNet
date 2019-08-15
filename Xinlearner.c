@@ -136,6 +136,13 @@ int main(){
     printf("W  : ok\n");
     B = (double *)pre_matrix(n+1);
     printf("B  : ok\n");
+
+    //初期値をセット
+    for(int i=0 ; i < n + 1 ; i++){
+        W[i * n + i] = 0.5;
+    } 
+    B[n] = 0.5;
+
     S = (double *)pre_matrix(n);
     printf("S  : ok\n");
     test = (double *)pre_matrix(pattern);
@@ -186,7 +193,7 @@ int main(){
                     for(int k=0 ; k < n ; k++){
                         dW[j * n + k] = (Y - T[i]) * W[n * n + j] * S[j] * (1 - S[j]) * In[i * n + k] * lr;
                         W[j * n + k] -= dW[j * n + k];
-
+                        printf("%d w : %8lf(%8lf)\n",j * n + k,W[j * n + k],(-1 * dW[j * n + k]));
                     }
                     dB[j] = (Y - T[i]) * W[n * n + j] * S[j] * (1 - S[j]) * lr;
                     B[j] -= dB[j];
@@ -199,6 +206,7 @@ int main(){
                 for(int k=0 ; k < n ; k++){
                     dW[n * n + k] = (Y - T[i]) * S[k] * lr;
                     W[n * n + k] -= dW[n * n + k];
+                    printf("%d w : %8lf(%8lf)\n",n * n + k,W[n * n + k],(-1 * dW[n * n + k]));
                 }
                 dB[n] = (Y - T[i]) * lr; 
                 B[n] -= dB[n];
