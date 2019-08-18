@@ -1,6 +1,6 @@
 # NeuralNet
 
-勉強中です。
+勉強中です。使い方等はwikiを見てみてね
 
 1.　２入力二層パーセプトロン（？）でXOR学習　　(Xorlearner.c)
 
